@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title></title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body, html {
+        overflow: hidden;
+        height: 100%;
+      }
+      h3 {
+        text-align: center;
+        font: 12px sans-serif;
+        background: #ccc;
+        margin: 0;
+        padding: 8px;
+        border-bottom: 1px solid black;
+      }
+      aside {
+        border-left: 1px solid black;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 200px;
+        height: 100%;
+      }
+      aside section {
+        border-bottom: 1px solid black;
+      }
+      aside section div {
+        padding: 8px;
+      }
+      aside canvas {
+        border: 1px solid black;
+        margin: 0 auto;
+        display: block;
+      }
+      #workspace {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: -moz-calc(100% - 201px);
+        height: 100%;
+        overflow: auto;
+        background: #444;
+      }
+      #edit {
+        margin: auto;
+        display: block;
+        border: 1px solid black;
+        background: white;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+      #swatches {
+        margin-top: 16px;
+        overflow: hidden;
+      }
+      #swatches li {
+        float: left;
+        width: 16px;
+        height: 16px;
+        border: 1px solid black;
+        list-style-type: none;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="workspace">
+        <canvas id="edit"></canvas>
+    </section>
+    <aside>
+      <section>
+        <h3>preview</h3>
+        <div>
+          <canvas id="out" width=128 height=128></canvas>
+        </div>
+      </section>
+      <section>
+        <h3>Colors</h3>
+        <div>
+          <input id="color">
+          <ul id="swatches">
+            <li style="background:#000;"></li>
+            <li style="background:#888;"></li>
+            <li style="background:#fff;"></li>
+          </ul>
+        </div>
+      </section>
+    </aside>
+    <script src="js/jquery.js"></script>
+    <script src="js/underscore.js"></script>
+    <script>
+      var scale = 10;
+      var $win = $(window),
+          $edit = $('#edit'),
+          $prvw = $('#out'),
+          outCanvas = $prvw[0],
+          editCtx = $edit[0].getContext('2d'),
+          prvwCtx = $prvw[0].getContext('2d'),
+          drawing = false,
+          lsTimeout;
+      $edit.attr({
+        width: scale * 128,
+        height: scale * 128
+      });
+      prvwCtx.fillStyle = "#fff";
+      prvwCtx.fillRect(0,0,128,128);
+      prvwCtx.fillStyle = "#000";
+      (function () {
+        var savedImage = new Image();
+        var imageData = localStorage['spritedata'];
+        if (imageData) {
+          savedImage.onload = function() {
+            prvwCtx.drawImage(savedImage,0,0);
+            update();
+          };
+          savedImage.src = imageData;
+        }
+      })();
+      editCtx.mozImageSmoothingEnabled = false;
+      editCtx.scale(scale,scale);
+      $win.mousedown(function() {
+        drawing = true;
+      });
+      $win.mouseup(function() {
+        drawing = false;
+      });
+      $edit.bind('mousedown mousemove', function(e) {
+        var x = ~~(e.originalEvent.layerX / scale),
+            y = ~~(e.originalEvent.layerY / scale);
+        if (drawing || e.type == 'mousedown') {
+          prvwCtx.fillRect(x,y,1,1);
+          update();
+        }
+      });
+      function update() {
+        editCtx.drawImage(outCanvas,0,0);
+        editCtx.lineWidth = .1;
+        for (var i=0; i<=16; i++) {
+          if (i%2) 
+            editCtx.strokeStyle = "#ccc";
+          else
+            editCtx.strokeStyle = "#888";
+          editCtx.strokeRect(i*8,0,0,128);
+          editCtx.strokeRect(0,i*8,128,0);
+        }
+        clearTimeout(lsTimeout);
+        lsTimeout = setTimeout(writeImage,1000);
+      }
+      function writeImage() {
+        localStorage['spritedata'] = outCanvas.toDataURL();
+      }
+
+      function dupe(x,y,x2,y2) {
+        prvwCtx.drawImage(outCanvas,x*16,y*16,16,16,x2*16,y2*16,16,16)
+        update();
+      }
+
+      $('#swatches').delegate('li', 'click', function() {
+        prvwCtx.fillStyle = $(this).css('background-color');
+      });
+    </script>
+  </body>
+</html>

@@ -1,4 +1,14 @@
+* {
+    margin: 0;
+    padding: 0;
+}
 #game canvas {
     display: block;
     margin: auto;
+}
+body {
+    background: #444;
+}
+img {
+    display: none;
 }
